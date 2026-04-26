@@ -428,6 +428,8 @@ void Game::init()
 void Game::start()
 {
     m_paused = false;
+    m_lastUpdateTime = m_elapsedTimer.elapsed();
+    m_lastDeltaMs = 0;
     m_updateTimer.start();
 }
 
