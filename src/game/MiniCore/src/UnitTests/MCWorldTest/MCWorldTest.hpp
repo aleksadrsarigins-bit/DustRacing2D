@@ -41,4 +41,6 @@ private slots:
     void testSetDimensions();
 
     void testSleepingObjectRemovalFromIntegration();
+    void testAddObjectDuringIntegration();
+    void testRemoveObjectDuringIntegration();
 };

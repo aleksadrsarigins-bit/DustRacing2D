@@ -7,6 +7,8 @@ Bug fixes:
 
 * Fix GitHub Issue #141: The Pause Button is bugged
 
+* Fix GitHub Issue #144: 2.2.0 crashes on OpenBSD when cars start moving
+
 Other:
 
 2.2.0

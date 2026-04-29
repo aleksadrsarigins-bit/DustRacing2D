@@ -285,4 +285,78 @@ void MCWorldTest::testSleepingObjectRemovalFromIntegration()
     QVERIFY(world.objectCount() == 5);
 }
 
+
+class SpawnerObject : public MCObject
+{
+public:
+    SpawnerObject(MCWorld & world)
+      : MCObject("SPAWNER")
+      , m_world(world)
+    {
+    }
+    void onStepTime(int) override
+    {
+        qDebug() << "SpawnerObject::onStepTime called";
+        auto newObj = new MCObject("SPAWNED");
+        m_world.addObject(*newObj);
+        m_spawnedObjects.push_back(newObj);
+    newObj->physicsComponent().preventSleeping(true);
+    }
+    ~SpawnerObject() override
+    {
+        for (auto obj : m_spawnedObjects)
+        {
+            delete obj;
+        }
+    }
+
+private:
+    MCWorld & m_world;
+    std::vector<MCObject *> m_spawnedObjects;
+};
+
+void MCWorldTest::testAddObjectDuringIntegration()
+{
+    MCWorld world;
+    world.setDimensions(-1000, 1000, -1000, 1000, -1000, 1000, 1.0);
+    auto spawner = new SpawnerObject(world);
+    spawner->physicsComponent().preventSleeping(true);
+    world.addObject(*spawner);
+
+    // This should not crash even if m_objects reallocates
+    for (int i = 0; i < 100; ++i)
+    {
+        world.stepTime(1);
+    }
+    QVERIFY(world.objectCount() > 100);
+    delete spawner;
+}
+
+void MCWorldTest::testRemoveObjectDuringIntegration()
+{
+    MCWorld world;
+    class SelfRemover : public MCObject
+    {
+    public:
+        SelfRemover(MCWorld & world)
+          : MCObject("REMOVER")
+          , m_world(world)
+        {
+        }
+        void onStepTime(int) override
+        {
+            m_world.removeObjectNow(*this);
+        }
+
+    private:
+        MCWorld & m_world;
+    };
+
+    SelfRemover remover(world);
+    world.addObject(remover);
+    QCOMPARE(world.objectCount(), 5u); // walls + remover
+
+    world.stepTime(1);
+    QCOMPARE(world.objectCount(), 4u); // walls only
+}
 QTEST_GUILESS_MAIN(MCWorldTest)
