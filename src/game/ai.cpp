@@ -93,7 +93,7 @@ void AI::update(bool isRaceCompleted)
         // speedControl(*m_track->trackTileAtLocation(m_car.location().i(), m_car.location().j()), isRaceCompleted);
         // 
         // Nomaina uz mainīgiem, lai izmantotu stāvokļos 
-        TargetNodeBasePtr targetNode = route.get(m_race->getCurrentTargetNodeIndex(m_car.index())));
+        TargetNodeBasePtr targetNode = route.get(m_race->getCurrentTargetNodeIndex(m_car.index()));
         TrackTile & currentTile = *m_track->trackTileAtLocation(m_car.location().i(), m_car.location().j());
       
         // Stāvokļa mašīnas atjaunošana 
