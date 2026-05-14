@@ -29,6 +29,14 @@ class TrackTile;
 class AI
 {
 public:
+    enum class State 
+    { 
+        FollowRoute,   //! Normāla braukšana pa ceļu
+        AvoidCollision,  //! Sadursmes novēršana
+        Brake, //! Bremzēšana 
+        Recover//! Atkopšanās pēc kontroles zaudēšanas
+    }
+
     //! Constructor.
     AI(Car & car, std::shared_ptr<Race> race);
 
@@ -41,7 +49,32 @@ public:
     //! Get associated car.
     Car & car() const;
 
+    //! Iegūt pašreizējo MI stāvokli
+    State getCurrentState() const;
+
 private:
+    
+    //! Stāvokļa mašīnas atjaunināšana (pašreizējais stāvoklis)
+    void updateState();
+    
+    //! FollowRoute stāvoklis
+    void handleFollowRoute(TargetNodeBasePtr targetNode, TrackTile & currentTile, bool isRaceCompleted);
+
+    //! AvoidCollision stāvoklis
+    void handleAvoidCollision(TargetNodeBasePtr targetNode);
+    
+    //! Bremzēšanas stāvoklis
+    void handleBraking(TargetNodeBasePtr targetNode, TrackTile & currentTile);
+    
+    //! Atkopšanas stāvoklis
+    void handleRecovering(TargetNodeBasePtr targetNode);
+    
+    //! Pāreja uz jaunu stāvokli
+    void transitionTo(State newState);
+
+    //! Uzlabota ātruma kontrole dažādiem stāvokļiem
+    void speedControlByState(TrackTile & currentTile, bool isRaceCompleted);
+
     //! Steering logic.
     void steerControl(TargetNodeBasePtr tnode);
 
@@ -61,6 +94,18 @@ private:
     size_t m_lastTargetNodeIndex;
 
     MCVector2dF m_randomTolerance;
+
+    //! Mākslīgā intelekta pašreizējais stāvoklis
+    State m_currentState;
+
+    //! Stāvokļa taimeris stāvokļa pārejām
+    float m_stateTimer;
+
+    //! Sadursmju noteikšanas slieksnis
+    float m_collisionThreshold;
+
+    //! Atkopšanas skaitītājs
+    int m_recoveryCounter;
 };
 
 typedef std::shared_ptr<AI> AIPtr;
