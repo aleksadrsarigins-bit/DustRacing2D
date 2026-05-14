@@ -35,7 +35,7 @@ public:
         AvoidCollision,  //! Sadursmes novēršana
         Brake, //! Bremzēšana 
         Recover//! Atkopšanās pēc kontroles zaudēšanas
-    }
+    };
 
     //! Constructor.
     AI(Car & car, std::shared_ptr<Race> race);
