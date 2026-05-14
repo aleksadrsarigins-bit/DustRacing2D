@@ -30,12 +30,52 @@ AI::AI(Car & car, std::shared_ptr<Race> race)
   , m_race(race)
   , m_lastDiff(0)
   , m_lastTargetNodeIndex(0)
+  , m_currentState(State::FollowRoute) 
+  , m_stateTimer(0.0f) 
+  , m_collisionThreshold(50.0f) 
+  , m_recoveryCounter(0)
 {
 }
 
 Car & AI::car() const
 {
     return m_car;
+}
+
+// Pašreizējā stāvokļa iegūšana 
+AI::State AI::getCurrentState() const
+{
+    return m_currentState;
+}
+
+// Stāvokļa piešķiršanas loģika
+void AI::transitionTo(State newState)
+{
+    if (m_currentState != newState)
+    {
+        m_currentState = newState;
+        m_stateTimer = 0.0f;
+        m_recoveryCounter = 0;
+    }
+}
+
+// Stāvokļu atjaunošanas loģika 
+void AI::updateState()
+{
+    if (m_stateTimer > 0.0f)
+    {
+        m_stateTimer -= 16.0f; // Aptuvenais laika solis
+    }
+
+    // Atgriežas pie stāvokļa "FollowRoute", ja atkopšana ir pabeigta
+    if (m_currentState == State::Recovering && m_recoveryCounter > 0)
+    {
+        m_recoveryCounter--;
+        if (m_recoveryCounter == 0)
+        {
+            transitionTo(State::FollowRoute);
+        }
+    }
 }
 
 void AI::update(bool isRaceCompleted)
@@ -48,12 +88,96 @@ void AI::update(bool isRaceCompleted)
         }
 
         const Route & route = m_track->trackData().route();
-        steerControl(route.get(m_race->getCurrentTargetNodeIndex(m_car.index())));
+        //
+        // steerControl(route.get(m_race->getCurrentTargetNodeIndex(m_car.index())));
+        // speedControl(*m_track->trackTileAtLocation(m_car.location().i(), m_car.location().j()), isRaceCompleted);
+        // 
+        // Nomaina uz mainīgiem, lai izmantotu stāvokļos 
+        TargetNodeBasePtr targetNode = route.get(m_race->getCurrentTargetNodeIndex(m_car.index())));
+        Tracktile & currentTile = *m_track->trackTileAtLocation(m_car.location().i(), m_car.location().j());
+      
+        // Stāvokļa mašīnas atjaunošana 
+        updateState();
 
-        speedControl(*m_track->trackTileAtLocation(m_car.location().i(), m_car.location().j()), isRaceCompleted);
-
+        // Specifiskas darbības izsaukšana, pamatoties uz stāvokli 
+        switch (m_currentState)
+        {
+            case State::FollowRoute:
+                handleFollowRoute(targetNode, currentTile, isRaceCompleted);
+                break
+            case State::AvoidCollision:
+                handleAvoidCollision(targetNode);
+                break
+            case State::Brake:
+                handleBraking(targetNode, currentTile);
+                break
+            case State::Recover:
+                handleRecovering(targetNode);
+                break
+        }
         m_lastTargetNodeIndex = m_race->getCurrentTargetNodeIndex(m_car.index());
     }
+}
+
+void AI::handleFollowRoute(TargetNodeBasePtr targetNode, TrackTile & currentTile, bool isRaceCompleted)
+{
+    //
+    // steerControl(route.get(m_race->getCurrentTargetNodeIndex(m_car.index())));
+    // speedControl(*m_track->trackTileAtLocation(m_car.location().i(), m_car.location().j()), isRaceCompleted);
+    //
+    // Funkciju "steerControl" un "speedControl" izsaukšana  
+    steerControl(targetNode);
+    speedControl(currentTile, isRaceCompleted);
+}
+
+void AI::handleAvoidCollision(TargetNodeBasePtr targetNode)
+{
+    // Tiek izsaukta funkcija "steerControl" ar zemāku ātrumu
+    steerControl(targetNode);
+    m_car.setAcceleratorEnabled(false);
+    m_car.setBrakeEnabled(true);
+
+    // Pēc īsa brīža atgriežas pie stāvokļa "FollowRoute"
+    m_stateTimer -= 16.0f;
+    if (m_stateTimer < 0.0f)
+    {
+        transitionTo(State::FollowRoute);
+    }
+}
+
+void AI::handleBraking(TargetNodeBasePtr targetNode, TrackTile & currentTile)
+{
+    // Bremzēšana pie līkumiem un šķēršļiem 
+    steerControl(targetNode);
+    m_car.setAcceleratorEnabled(false);
+    m_car.setBrakeEnabled(true);
+
+    // Ja nav pietiekams ātrums, atgriežas stāvoklī "FollowRoute"
+    if (m_car.absSpeed() < 5.0f)
+    {
+        transitionTo(State::FollowRoute);
+    }
+}
+
+void AI::handleRecovering(TargetNodeBasePtr targetNode)
+{
+    // Funkcijas "steerControl" izsaukšana 
+    steerControl(targetNode);
+
+    // Ātruma atkopšana
+    // Kamēr "m_recoveryCounter" nesasniedz 30, mašīna nepaātrinās 
+    if (m_recoveryCounter < 30) 
+    {
+        m_car.setAcceleratorEnabled(false);
+        m_car.setBrakeEnabled(true);
+    }
+    else
+    {
+        m_car.setAcceleratorEnabled(true);
+        m_car.setBrakeEnabled(false);
+    }
+
+    m_recoveryCounter++;
 }
 
 void AI::setRandomTolerance()
