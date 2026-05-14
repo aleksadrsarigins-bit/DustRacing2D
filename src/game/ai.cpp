@@ -94,7 +94,7 @@ void AI::update(bool isRaceCompleted)
         // 
         // Nomaina uz mainīgiem, lai izmantotu stāvokļos 
         TargetNodeBasePtr targetNode = route.get(m_race->getCurrentTargetNodeIndex(m_car.index())));
-        Tracktile & currentTile = *m_track->trackTileAtLocation(m_car.location().i(), m_car.location().j());
+        TrackTile & currentTile = *m_track->trackTileAtLocation(m_car.location().i(), m_car.location().j());
       
         // Stāvokļa mašīnas atjaunošana 
         updateState();
@@ -104,16 +104,16 @@ void AI::update(bool isRaceCompleted)
         {
             case State::FollowRoute:
                 handleFollowRoute(targetNode, currentTile, isRaceCompleted);
-                break
+                break;
             case State::AvoidCollision:
                 handleAvoidCollision(targetNode);
-                break
+                break;
             case State::Brake:
                 handleBraking(targetNode, currentTile);
-                break
+                break;
             case State::Recover:
                 handleRecovering(targetNode);
-                break
+                break;
         }
         m_lastTargetNodeIndex = m_race->getCurrentTargetNodeIndex(m_car.index());
     }
