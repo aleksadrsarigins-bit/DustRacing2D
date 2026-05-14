@@ -68,7 +68,7 @@ void AI::updateState()
     }
 
     // Atgriežas pie stāvokļa "FollowRoute", ja atkopšana ir pabeigta
-    if (m_currentState == State::Recovering && m_recoveryCounter > 0)
+    if (m_currentState == State::Recover && m_recoveryCounter > 0)
     {
         m_recoveryCounter--;
         if (m_recoveryCounter == 0)
